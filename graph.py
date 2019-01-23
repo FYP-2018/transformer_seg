@@ -26,7 +26,12 @@ class Graph():
             self.ml_loss = self._add_ml_loss(is_training=is_training)
             self.loss = self.ml_loss
 
-            if is_training:
+            if not is_training:
+                tf.summary.scalar('eval acc', self.acc)
+                tf.summary.scalar('eval rouge', self.rouge)
+                self.merged = tf.summary.merge_all()
+
+            else:
                 self.global_step = tf.Variable(0, name='global_step', trainable=False)
                 self.optimizer = tf.train.AdamOptimizer(learning_rate=hp.lr, beta1=0.9, beta2=0.98, epsilon=1e-8)
 
@@ -45,12 +50,14 @@ class Graph():
                 '''
 
                 # Summary
+                tf.summary.scalar('acc', self.acc)
+                tf.summary.scalar('rouge', self.rouge)
                 tf.summary.scalar('globle_norm_ml', globle_norm_ml)
                 tf.summary.scalar('loss', self.loss)
-
                 self.merged = tf.summary.merge_all()
 
-        self.filewriter = tf.summary.FileWriter(hp.tb_dir + '/train', self.graph)
+        # self.filewriter = tf.summary.FileWriter(hp.tb_dir + '/train', self.graph)
+        self.filewriter = tf.summary.FileWriter(hp.tb_dir + '/train')
 
 
     def _add_encoder(self, is_training):
@@ -84,7 +91,7 @@ class Graph():
                 self.enc = tf.layers.dropout(self.enc,
                                              rate=hp.dropout_rate,
                                              training=tf.convert_to_tensor(is_training))
-                                             
+
                 ## Blocks
                 for i in range(hp.num_blocks):
                     with tf.variable_scope("num_blocks_{}".format(i)):
@@ -98,7 +105,7 @@ class Graph():
 
                         self.enc = feedforward(self.enc, num_units=[hp.ffw_unit, hp.hidden_units])
                         ## ATTENTION: the hard-coded >> 4 * hp.hidden_units <<
-                        tf.summary.histogram(name="ffw-output/{}".format(i), values=self.enc)
+                        # tf.summary.histogram(name="ffw-output/{}".format(i), values=self.enc)
 
 
     def _add_decoder(self, is_training, decoder_inputs, inside_loop=False, reuse=None):
@@ -182,13 +189,10 @@ class Graph():
             self.istarget = tf.to_float(tf.not_equal(self.y, 0)) # shape: (batch_size, max_timestep)
             self.acc = tf.reduce_sum(tf.to_float(tf.equal(self.preds, self.y)) * self.istarget) / (
                 tf.reduce_sum(self.istarget))
-
             self.rouge = tf.reduce_sum(rouge_l_fscore(self.preds, self.y)) / float(hp.batch_size)
 
-            tf.summary.scalar('acc', self.acc)
-            tf.summary.scalar('rouge', self.rouge)
-
             ml_loss = -100
+
             if is_training:
                 # Loss
                 self.y_smoothed = label_smoothing(tf.one_hot(self.y, depth=self.vocab_size))

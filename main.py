@@ -5,7 +5,6 @@
 from __future__ import print_function
 import os, codecs
 import logging
-from tqdm import tqdm
 
 import numpy as np
 import tensorflow as tf
@@ -33,7 +32,9 @@ def train():
 
     print("Start training...")
     with train_g.graph.as_default():
-        sv = tf.train.Supervisor(logdir=hp.logdir)
+        saver = tf.train.Saver(max_to_keep=1)
+        sv = tf.train.Supervisor(logdir=hp.logdir, saver=None)
+
         config = tf.ConfigProto(allow_soft_placement=True,
                                 log_device_placement=False)
         config.gpu_options.allow_growth = True
@@ -46,11 +47,6 @@ def train():
             for epoch in range(1, hp.num_epochs+1):
                 print("Starting {}-th epoch".format(epoch))
 
-                # if epoch == 1:
-                #     sess.run(train_g.eta.initializer) # explicitly init eta
-                #     train_g.subset_saver.restore(sess, tf.train.latest_checkpoint(hp.pretrain_logdir))
-                #     print("Restored previous training model!")
-
                 if sv.should_stop():
                     break
 
@@ -58,18 +54,16 @@ def train():
                     true_step = step + (epoch - 1) * train_g.num_batch
 
                     if true_step % hp.train_record_steps == 0:
-                        # outp = [train_g.loss, train_g.acc, train_g.rouge, train_g.globle_norm_ml, train_g.merged, train_g.train_op_ml,]
-                        # loss, acc, rouge, norm_ml, summary, _ = sess.run(outp)
                         summary, _ = sess.run([train_g.merged, train_g.train_op_ml])
                         train_g.filewriter.add_summary(summary, true_step)
                     else:
                         sess.run(train_g.train_op_ml)
 
                     if true_step % hp.checkpoint_steps == 0:
-                        sv.saver.save(sess, hp.logdir + '/model_epoch_%02d_step_%d' % (epoch, true_step))
+                        # sv.saver.save(sess, hp.logdir + '/model_epoch_%02d_step_%d' % (epoch, true_step))
+                        saver.save(sess, hp.logdir + '/model_epoch_%02d_step_%d' % (epoch, true_step))
 
                     if true_step > 0 and true_step % hp.eval_record_steps == 0:
-                        pass
                         eval(cur_step=true_step, write_file=False)
 
                     # iteration indent
@@ -166,8 +160,10 @@ def eval(type='eval', cur_step=0, write_file=True):
 
             list_of_refs, hypotheses = [], []
             num_batch = len(X) // hp.batch_size
-            print("num batch: ", num_batch, "len(X): ", len(X) )
+            print("num batch: ", num_batch, "len(X): ", len(X))
+            
             for i in range(num_batch):
+                print("the {} th set of batch ".format(i))
                 ### Get mini-batches
                 x = X[i*hp.batch_size: (i+1)*hp.batch_size]
                 sources = Sources[i*hp.batch_size: (i+1)*hp.batch_size]
@@ -175,8 +171,18 @@ def eval(type='eval', cur_step=0, write_file=True):
 
                 ### Autoregressive inference
                 preds = np.zeros((hp.batch_size, hp.summary_maxlen), np.int32)
+
                 for j in range(hp.summary_maxlen):
-                    _preds = sess.run(g.preds, {g.x: x, g.y: preds})
+                    if j % 10 == 0: 
+                        print("generating {} prediction position".format(j))
+
+                    if j == hp.summary_maxlen - 1:  # record the accuracy at the end of inference
+                        print("running summary")
+                        _preds, summary = sess.run([g.preds, g.merged], {g.x: x, g.y: preds})
+                        g.filewriter.add_summary(summary, cur_step)
+                    else:
+                        _preds = sess.run(g.preds, {g.x: x, g.y: preds})
+
                     preds[:, j] = _preds[:, j]
 
                 for source, target, pred in zip(sources, targets, preds): # sentence-wise

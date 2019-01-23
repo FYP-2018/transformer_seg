@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
 #/usr/bin/python2
-'''
-June 2017 by kyubyong park.
-kbpark.linguist@gmail.com.
-https://www.github.com/kyubyong/transformer
-'''
 
 # from nsml import DATASET_PATH
 import os
 
-DATASET_PATH = '/floyd/input'  # & mount dataset into 'train' folder
+# DATASET_PATH = '/floyd/input'  # & mount dataset into 'train' folder
 # DATASET_PATH = 'D:/Crystina Desktop/HKUST/YR 3 SUMMER/FYP/dataset/CNNDM/processed'
+# DATASET_PATH = '/content/drive/My Drive/dataset'  # & mount dataset into 'train' folder
+DATASET_PATH = '../../dataset'
 
 class Hyperparams: # for CNNDM data
-    logdir = 'logdir' # log directory
-    tb_dir = 'tbdir'
+    # logdir = '/content/drive/My Drive/logdir' # log directory
+    # tb_dir = '/content/drive/My Drive/tbdir'
+    logdir = './logdir'
+    tb_dir = './tbdir'
     checkpoint_steps = 1000
     eval_record_threshold = 1000
     eval_record_steps = 200  # should be larger than checkpoint_steps? otherwise would duplicate
@@ -24,12 +23,19 @@ class Hyperparams: # for CNNDM data
     batch_size = 1  # orig：32
 
     ## data source
-    source_train = os.path.join(DATASET_PATH, 'train', 'sampled_content.txt')
-    target_train = os.path.join(DATASET_PATH, 'train', 'sampled_summary.txt')
-    source_valid = os.path.join(DATASET_PATH, 'train', 'val_content.txt') # change
-    target_valid = os.path.join(DATASET_PATH, 'train', 'val_summary.txt') # change
-    source_test = os.path.join(DATASET_PATH, 'train', 'test_content.txt')
-    sum_dict = os.path.join(DATASET_PATH, 'train', 'dict.txt')
+    source_train = os.path.join(DATASET_PATH, 'sampled_content.txt')
+    target_train = os.path.join(DATASET_PATH, 'sampled_summary.txt')
+    source_valid = os.path.join(DATASET_PATH, 'sampled_content_eval.txt') # change
+    target_valid = os.path.join(DATASET_PATH, 'sampled_summary_eval.txt') # change
+    # source_test = os.path.join(DATASET_PATH, 'sampled_content.txt')
+    # sum_dict = os.path.join(DATASET_PATH, 'dict.txt')
+
+    # source_train = os.path.join(DATASET_PATH, 'train_content.txt')
+    # target_train = os.path.join(DATASET_PATH, 'train_summary.txt')
+    # source_valid = os.path.join(DATASET_PATH, 'val_content.txt') # change
+    # target_valid = os.path.join(DATASET_PATH, 'val_summary.txt') # change
+    source_test = os.path.join(DATASET_PATH, 'test_content.txt')
+    sum_dict = os.path.join(DATASET_PATH, 'dict.txt')
     doc_dict = sum_dict
 
 
@@ -47,7 +53,7 @@ class Hyperparams: # for CNNDM data
     ffw_unit = 2048 # orig: 2048
     num_blocks = 3
     num_heads = 8
-
+    
     lr = 0.00003
     dropout_rate = 0.1
     # eta_init = 0.95
