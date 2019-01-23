@@ -10,8 +10,6 @@ import os
 DATASET_PATH = '../../dataset'
 
 class Hyperparams: # for CNNDM data
-    # logdir = '/content/drive/My Drive/logdir' # log directory
-    # tb_dir = '/content/drive/My Drive/tbdir'
     logdir = './logdir'
     tb_dir = './tbdir'
     checkpoint_steps = 1000
@@ -45,7 +43,10 @@ class Hyperparams: # for CNNDM data
     article_maxlen = 400  # Maximum number of words in a sentence. alias = T.
     summary_minlen = 20
     summary_maxlen = 100  # Maximum number of words in a sentence. alias = T.
-
+    
+    enc_atten_range = 50      # for one side, so the full attention range is atten_range*2+1
+    dec_atten_range = 20 
+    
     ## training parameter
     sinusoid = False # If True, use sinusoid. If false, positional embedding.
 

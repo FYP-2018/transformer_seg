@@ -22,6 +22,7 @@ class Graph():
 
             self.decoder_inputs = tf.concat((tf.ones_like(self.y[:, :1]) * 2, self.y[:, :-1]), -1)  # 2:<S> # define decoder inputs
 
+            print("======== Input prepared")
             self._add_encoder(is_training=is_training)
             self.ml_loss = self._add_ml_loss(is_training=is_training)
             self.loss = self.ml_loss
@@ -32,17 +33,25 @@ class Graph():
                 self.merged = tf.summary.merge_all()
 
             else:
+                print("start preparing training nodes!")
                 self.global_step = tf.Variable(0, name='global_step', trainable=False)
                 self.optimizer = tf.train.AdamOptimizer(learning_rate=hp.lr, beta1=0.9, beta2=0.98, epsilon=1e-8)
 
+                print("optimizer done")                
                 grads_and_vars_ml = self.optimizer.compute_gradients(loss=self.ml_loss)
+                print("grads_and_vars_ml done")
                 grad_ml, vars_ml = zip(*grads_and_vars_ml) # parse grad and var
+                print("grad & vars zip done")
 
                 # add gradient clipping
                 clipped_grad_ml, globle_norm_ml = tf.clip_by_global_norm(grad_ml, hp.maxgradient)
+                print("clipping done")
+                
                 self.globle_norm_ml = globle_norm_ml
                 self.train_op_ml  = self.optimizer.apply_gradients(grads_and_vars=zip(clipped_grad_ml, vars_ml),
                                                                    global_step=self.global_step)
+                                                                   
+                print("train_op_ml done")
                 '''
                 # training wihtout gradient clipping
                 self.train_op_ml  = self.optimizer.apply_gradients(grads_and_vars=grads_and_vars_ml,
@@ -91,10 +100,14 @@ class Graph():
                 self.enc = tf.layers.dropout(self.enc,
                                              rate=hp.dropout_rate,
                                              training=tf.convert_to_tensor(is_training))
-
+                
+                print("     Encoder: embedding ready")
                 ## Blocks
                 for i in range(hp.num_blocks):
+                    print("The {} th encoder block".format(i))
+                    
                     with tf.variable_scope("num_blocks_{}".format(i)):
+                        """
                         self.enc = multihead_attention(queries=self.enc,
                                                        keys=self.enc,
                                                        num_units=hp.hidden_units,
@@ -102,7 +115,15 @@ class Graph():
                                                        dropout_rate=hp.dropout_rate,
                                                        is_training=is_training,
                                                        causality=False)
-
+                        """
+                        self.enc = multihead_self_attention(queries=self.enc,
+                                                            atten_range=hp.enc_atten_range,
+                                                           num_units=hp.hidden_units,
+                                                           num_heads=hp.num_heads,
+                                                           dropout_rate=hp.dropout_rate,
+                                                           is_training=is_training,
+                                                           causality=False)
+                        print("self.enc: ", self.enc.get_shape().as_list())
                         self.enc = feedforward(self.enc, num_units=[hp.ffw_unit, hp.hidden_units])
                         ## ATTENTION: the hard-coded >> 4 * hp.hidden_units <<
                         # tf.summary.histogram(name="ffw-output/{}".format(i), values=self.enc)
@@ -140,6 +161,7 @@ class Graph():
                                           scale=False,
                                           scope="dec_pe",
                                           reuse=reuse)
+                print("     Decoder: embedding ready")
 
                 ## Dropout
                 self.dec = tf.layers.dropout(self.dec,
@@ -148,7 +170,10 @@ class Graph():
 
                 ## Blocks
                 for i in range(hp.num_blocks):
+                    print("The {} th decoder block".format(i))
+
                     with tf.variable_scope("num_blocks_{}".format(i)):
+                        """
                         self.dec = multihead_attention(queries=self.dec,
                                                        keys=self.dec,
                                                        num_units=hp.hidden_units,
@@ -159,6 +184,18 @@ class Graph():
                                                        scope="self_attention",
                                                        inside_loop=inside_loop,
                                                        reuse=reuse)
+                        """
+                        self.dec = multihead_self_attention(queries=self.dec,
+                                                            atten_range=hp.dec_atten_range,
+                                                           num_units=hp.hidden_units,
+                                                           num_heads=hp.num_heads,
+                                                           dropout_rate=hp.dropout_rate,
+                                                           is_training=is_training,
+                                                           causality=True,
+                                                           scope="self_attention",
+                                                           inside_loop=inside_loop,
+                                                           reuse=reuse)
+                        print("self.dec: ", self.dec.get_shape().as_list())
 
                         self.dec = multihead_attention(queries=self.dec,
                                                        keys=self.enc,
@@ -182,8 +219,10 @@ class Graph():
 
 
     def _add_ml_loss(self, is_training):
-        logits = self._add_decoder(is_training=is_training, decoder_inputs=self.decoder_inputs)
+        logits = self._add_decoder(is_training=is_training, 
+                                   decoder_inputs=self.decoder_inputs)
 
+        print("========== decoder prepared")
         with self.graph.as_default():
             self.preds = tf.to_int32(tf.argmax(logits, axis=-1)) # shape: (batch_size, max_timestep)
             self.istarget = tf.to_float(tf.not_equal(self.y, 0)) # shape: (batch_size, max_timestep)
