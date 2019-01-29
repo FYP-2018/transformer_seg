@@ -186,6 +186,7 @@ def positional_encoding(inputs,
 
         return outputs
 
+
 def multihead_self_attention(queries,
                              atten_range=100,
                              num_units=None,
@@ -195,7 +196,7 @@ def multihead_self_attention(queries,
                              causality=False,
                              inside_loop=False,
                              scope="multihead_self_attention",
-                             reuse=None):
+                             reuse=tf.AUTO_REUSE):
     '''Applies multihead self attention with segmented attention 
     (only perform local attention according to hp.atten_range) 
     
@@ -222,36 +223,37 @@ def multihead_self_attention(queries,
     outputs = []
     
     for i in range(num_timestep):
-        with tf.variable_scope("local_atten_{}".format(i), reuse=reuse):
-            l_idx = i - atten_range
-            r_idx = i + atten_range
-            
-            # shift the local attention position if it's out of range
-            if l_idx < 0: 
-                r_idx += (0 - l_idx)
-                l_idx = 0   
-            if r_idx > num_timestep - 1: 
-                l_idx -= (r_idx - num_timestep + 1)
-                r_idx = num_timestep - 1
-                
-            sub_queries = queries[:, i:i+1, :]
-            sub_queries_neighbour = queries[:, l_idx:r_idx+1, :]
-            
-            # if (num_timestep == 100):
-                # print(i, "] ~~~~~~~~~~~~~~ sub_queries: ", sub_queries.get_shape().as_list())
-                # print(i, "] ~~~~~~~~~~~~~~ sub_queries_neighbour: ", sub_queries_neighbour.get_shape().as_list())
+        # with tf.variable_scope("local_atten_{}".format(i), reuse=reuse):
+        l_idx = i - atten_range
+        r_idx = i + atten_range            
+        
+        # shift the local attention position if it's out of range
+        if l_idx < 0:
+            r_idx += (0 - l_idx)
+            l_idx = 0   
+        if r_idx > num_timestep - 1: 
+            l_idx -= (r_idx - num_timestep + 1)
+            r_idx = num_timestep - 1
+        
+        sub_queries = queries[:, i:i+1, :]
+        sub_queries_neighbour = queries[:, l_idx:r_idx+1, :]
+        
+        # if (num_timestep == 100):
+            # print(i, "] ~~~~~~~~~~~~~~ sub_queries: ", sub_queries.get_shape().as_list())
+            # print(i, "] ~~~~~~~~~~~~~~ sub_queries_neighbour: ", sub_queries_neighbour.get_shape().as_list())
 
-            output = multihead_attention(queries = sub_queries, 
-                                           keys = sub_queries_neighbour,
-                                           num_units=num_units,
-                                           num_heads=num_heads,
-                                           dropout_rate=dropout_rate,
-                                           is_training=is_training,
-                                           causality=causality,
-                                           reuse=reuse)
-            outputs.append(output)
-            # print(i, "]~~~~~~~~~~~~~~ outputs: ", output.get_shape().as_list())
-           
+        output = multihead_attention(queries=sub_queries, 
+                                       keys=sub_queries_neighbour,
+                                       num_units=num_units,
+                                       num_heads=num_heads,
+                                       dropout_rate=dropout_rate,
+                                       is_training=is_training,
+                                       causality=causality,
+                                       reuse=reuse)
+                                       
+        outputs.append(output)
+        # print(i, "]~~~~~~~~~~~~~~ outputs: ", output.get_shape().as_list())
+    
     outputs = tf.concat(outputs, axis=1)    # concate along timestep axis 
     # print("~~~~~~~~~~~~~~ outputs: ", outputs.get_shape().as_list())
     return outputs
