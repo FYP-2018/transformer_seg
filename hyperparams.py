@@ -7,7 +7,7 @@ import os
 # DATASET_PATH = '/floyd/input'  # & mount dataset into 'train' folder
 # DATASET_PATH = 'D:/Crystina Desktop/HKUST/YR 3 SUMMER/FYP/dataset/CNNDM/processed'
 # DATASET_PATH = '/content/drive/My Drive/dataset'  # & mount dataset into 'train' folder
-DATASET_PATH = '../../dataset'
+DATASET_PATH = '../dataset'
 
 class Hyperparams: # for CNNDM data
     logdir = './logdir'
@@ -21,17 +21,17 @@ class Hyperparams: # for CNNDM data
     batch_size = 1  # orig：32
 
     ## data source
-    source_train = os.path.join(DATASET_PATH, 'sampled_content.txt')
-    target_train = os.path.join(DATASET_PATH, 'sampled_summary.txt')
-    source_valid = os.path.join(DATASET_PATH, 'sampled_content_eval.txt') # change
-    target_valid = os.path.join(DATASET_PATH, 'sampled_summary_eval.txt') # change
+    # source_train = os.path.join(DATASET_PATH, 'sampled_content.txt')
+    # target_train = os.path.join(DATASET_PATH, 'sampled_summary.txt')
+    # source_valid = os.path.join(DATASET_PATH, 'sampled_content_eval.txt') # change
+    # target_valid = os.path.join(DATASET_PATH, 'sampled_summary_eval.txt') # change
     # source_test = os.path.join(DATASET_PATH, 'sampled_content.txt')
     # sum_dict = os.path.join(DATASET_PATH, 'dict.txt')
 
-    # source_train = os.path.join(DATASET_PATH, 'train_content.txt')
-    # target_train = os.path.join(DATASET_PATH, 'train_summary.txt')
-    # source_valid = os.path.join(DATASET_PATH, 'val_content.txt') # change
-    # target_valid = os.path.join(DATASET_PATH, 'val_summary.txt') # change
+    source_train = os.path.join(DATASET_PATH, 'train_content.txt')
+    target_train = os.path.join(DATASET_PATH, 'train_summary.txt')
+    source_valid = os.path.join(DATASET_PATH, 'val_content.txt') # change
+    target_valid = os.path.join(DATASET_PATH, 'val_summary.txt') # change
     source_test = os.path.join(DATASET_PATH, 'test_content.txt')
     sum_dict = os.path.join(DATASET_PATH, 'dict.txt')
     doc_dict = sum_dict

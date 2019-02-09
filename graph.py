@@ -122,7 +122,9 @@ class Graph():
                                                            num_heads=hp.num_heads,
                                                            dropout_rate=hp.dropout_rate,
                                                            is_training=is_training,
-                                                           causality=False)
+                                                           causality=False, 
+                                                           reuse=tf.AUTO_REUSE)
+                                                           
                         print("self.enc: ", self.enc.get_shape().as_list())
                         self.enc = feedforward(self.enc, num_units=[hp.ffw_unit, hp.hidden_units])
                         ## ATTENTION: the hard-coded >> 4 * hp.hidden_units <<
@@ -194,7 +196,8 @@ class Graph():
                                                            causality=True,
                                                            scope="self_attention",
                                                            inside_loop=inside_loop,
-                                                           reuse=reuse)
+                                                           reuse=tf.AUTO_REUSE)
+                                                           
                         print("self.dec: ", self.dec.get_shape().as_list())
 
                         self.dec = multihead_attention(queries=self.dec,

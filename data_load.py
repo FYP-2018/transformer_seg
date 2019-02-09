@@ -6,7 +6,6 @@ from hyperparams import Hyperparams as hp
 import tensorflow as tf
 import numpy as np
 import codecs
-import regex
 import logging
 
 

@@ -33,7 +33,8 @@ def train():
     print("Start training...")
     with train_g.graph.as_default():
         saver = tf.train.Saver(max_to_keep=1)
-        sv = tf.train.Supervisor(logdir=hp.logdir, saver=None)
+        # sv = tf.train.Supervisor(logdir=hp.logdir, saver=None)
+        sv = tf.train.Supervisor(logdir=hp.logdir, saver=saver)
 
         config = tf.ConfigProto(allow_soft_placement=True,
                                 log_device_placement=False)

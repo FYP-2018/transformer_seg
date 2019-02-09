@@ -197,6 +197,7 @@ def multihead_self_attention(queries,
                              inside_loop=False,
                              scope="multihead_self_attention",
                              reuse=tf.AUTO_REUSE):
+                             
     '''Applies multihead self attention with segmented attention 
     (only perform local attention according to hp.atten_range) 
     
